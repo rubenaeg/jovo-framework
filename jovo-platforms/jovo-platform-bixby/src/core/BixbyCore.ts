@@ -84,28 +84,34 @@ export class BixbyCore implements Plugin {
     const tell = _get(output, 'Bixby.tell') || _get(output, 'tell');
     if (tell) {
       const speech = tell.speech ? SpeechBuilder.toSSML(tell.speech) : '';
-      _set(capsule.$response, '_JOVO_SPEECH_', speech);
+      _set(capsule.$response, '_speech.speech', speech);
 
       const text = tell.speech ? SpeechBuilder.removeSSML(tell.speech) : '';
-      _set(capsule.$response, '_JOVO_TEXT_', text);
+      _set(capsule.$response, '_speech.text', text);
+
+      _set(capsule.$response, '_shouldEndSession', true);
     }
 
     const ask = _get(output, 'Bixby.ask') || _get(output, 'ask');
     if (ask) {
       const speech = ask.speech ? SpeechBuilder.toSSML(ask.speech) : '';
-      _set(capsule.$response, '_JOVO_SPEECH_', speech);
+      _set(capsule.$response, '_speech.speech', speech);
+      _set(capsule.$response, '_speech.text', SpeechBuilder.removeSSML(speech));
 
-      const text = ask.speech ? SpeechBuilder.removeSSML(ask.speech) : '';
-      _set(capsule.$response, '_JOVO_TEXT_', text);
+      const reprompt = ask.reprompt ? SpeechBuilder.toSSML(ask.reprompt) : '';
+      _set(capsule.$response, '_reprompt.speech', reprompt);
+      _set(capsule.$response, '_reprompt.text', SpeechBuilder.removeSSML(reprompt));
+
+      _set(capsule.$response, '_shouldEndSession', false);
     }
 
     if (capsule.$session && capsule.$session.$data) {
-      _set(capsule.$response, '_JOVO_SESSION_DATA_', capsule.$session.$data);
+      _set(capsule.$response, '_sessionData', capsule.$session.$data);
     }
 
     // set layout data
     if (capsule.$layout) {
-      _set(capsule.$response, '_JOVO_LAYOUT_', capsule.$layout);
+      _set(capsule.$response, '_layout', capsule.$layout);
     }
   }
 

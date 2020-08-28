@@ -1,14 +1,25 @@
-import { JovoResponse } from 'jovo-core';
 import _get from 'lodash.get';
-import { Response, SessionData } from './Interfaces';
+import { JovoResponse, SpeechBuilder } from 'jovo-core';
 
-export class BixbyResponse implements JovoResponse {
-  _JOVO_SESSION_DATA_?: SessionData;
-  _JOVO_SPEECH_?: string;
-  _JOVO_TEXT_?: string;
-  _JOVO_AUDIO_?: string;
+import { Response, SessionData, Dialog } from './Interfaces';
+import { BixbyAudioPlayer } from '../modules/BixbyAudioPlayer';
+
+export class BixbyResponse implements Response, JovoResponse {
+  _sessionData: SessionData = {
+    _id: '',
+  };
+  _speech: Dialog = {
+    speech: '',
+    text: '',
+  };
+  _reprompt: Dialog = {
+    speech: '',
+    text: '',
+  };
+  _audio?: BixbyAudioPlayer;
   // tslint:disable:no-any
-  _JOVO_LAYOUT_?: { [key: string]: any };
+  _layout?: { [key: string]: any };
+  _shouldEndSession: boolean = true;
 
   static fromJSON(jsonRaw: Response | string) {
     const json = typeof jsonRaw === 'string' ? JSON.parse(jsonRaw) : jsonRaw;
@@ -17,45 +28,43 @@ export class BixbyResponse implements JovoResponse {
   }
 
   setSessionId(id: string) {
-    if (!this._JOVO_SESSION_DATA_) {
-      this._JOVO_SESSION_DATA_ = {
-        _JOVO_SESSION_ID_: '',
+    if (!this._sessionData) {
+      this._sessionData = {
+        _id: '',
       };
     }
-    this._JOVO_SESSION_DATA_._JOVO_SESSION_ID_ = id;
+    this._sessionData._id = id;
     return this;
   }
 
   getSessionId(): string | undefined {
-    if (this._JOVO_SESSION_DATA_) {
-      return this._JOVO_SESSION_DATA_._JOVO_SESSION_ID_;
+    if (this._sessionData) {
+      return this._sessionData._id;
     }
   }
 
   getSpeech(): string | undefined {
-    return this._JOVO_SPEECH_;
+    return this._speech.speech;
   }
 
   getReprompt(): string | undefined {
-    // TODO: implement reprompt
-    return this._JOVO_SPEECH_;
+    return this._reprompt.speech;
   }
 
   getSpeechPlain(): string | undefined {
-    return this._JOVO_TEXT_;
+    return this._speech.text;
   }
 
   getRepromptPlain(): string | undefined {
-    // TODO: implement reprompt
-    return this._JOVO_TEXT_;
+    return this._reprompt.text;
   }
 
   getSessionAttributes(): SessionData | undefined {
-    return this._JOVO_SESSION_DATA_;
+    return this._sessionData;
   }
 
   setSessionAttributes(sessionAttributes: SessionData): this {
-    this._JOVO_SESSION_DATA_ = sessionAttributes;
+    this._sessionData = sessionAttributes;
     return this;
   }
 
@@ -68,22 +77,73 @@ export class BixbyResponse implements JovoResponse {
   }
 
   isTell(speechText?: string | string[] | undefined): boolean {
-    throw new Error('Method not implemented.');
+    if (speechText) {
+      const ssml: string = this._speech.speech;
+
+      if (Array.isArray(speechText)) {
+        for (const speechTextElement of speechText) {
+          if (SpeechBuilder.toSSML(speechTextElement) === ssml) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        if (ssml !== SpeechBuilder.toSSML(speechText)) {
+          return false;
+        }
+      }
+    }
+
+    return this._shouldEndSession;
   }
 
   isAsk(
     speechText?: string | string[] | undefined,
     repromptText?: string | string[] | undefined,
   ): boolean {
-    throw new Error('Method not implemented.');
+    if (speechText) {
+      const ssml: string = this._speech.speech;
+
+      if (Array.isArray(speechText)) {
+        for (const speechTextElement of speechText) {
+          if (SpeechBuilder.toSSML(speechTextElement) === ssml) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        if (ssml !== SpeechBuilder.toSSML(speechText)) {
+          return false;
+        }
+      }
+    }
+
+    if (repromptText) {
+      const ssml: string = this._reprompt.speech;
+
+      if (Array.isArray(repromptText)) {
+        for (const speechTextElement of repromptText) {
+          if (SpeechBuilder.toSSML(speechTextElement) === ssml) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        if (ssml !== SpeechBuilder.toSSML(repromptText)) {
+          return false;
+        }
+      }
+    }
+
+    return !this._shouldEndSession;
   }
 
   hasState(state: string): boolean | undefined {
-    return state === _get(this._JOVO_SESSION_DATA_, '_JOVO_STATE_');
+    return state === _get(this, '_sessionData._state');
   }
 
   getSessionAttribute(key: string): string | undefined {
-    return this._JOVO_SESSION_DATA_![key];
+    return _get(this, `_sessionData.${key}`);
   }
 
   // tslint:disable:no-any
@@ -101,7 +161,6 @@ export class BixbyResponse implements JovoResponse {
   }
 
   hasSessionEnded(): boolean {
-    // TODO implement
-    return true;
+    return this._shouldEndSession;
   }
 }

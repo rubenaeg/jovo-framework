@@ -60,7 +60,7 @@ export class BixbyAudioPlayerPlugin implements Plugin {
     }
 
     if (capsule.$audioPlayer && capsule.$audioPlayer.audioItem.length > 0) {
-      _set(capsule.$response, '_JOVO_AUDIO_', capsule.$audioPlayer);
+      _set(capsule.$response, '_audio', capsule.$audioPlayer);
     }
   }
 }

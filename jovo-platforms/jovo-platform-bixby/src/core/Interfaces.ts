@@ -23,23 +23,28 @@ export interface VivContext {
 export interface BixbyRequestJSON {
   $vivContext: VivContext;
   // tslint:disable:no-any
-  _JOVO_PREV_RESPONSE_: any;
+  _jovoContext: any;
   // tslint:disable:no-any
   [key: string]: any;
 }
 
 export interface SessionData {
-  _JOVO_SESSION_ID_: string;
-  _JOVO_STATE_?: string;
+  _id: string;
+  _state?: string;
   // tslint:disable:no-any
   [key: string]: any;
 }
 
+export interface Dialog {
+  speech: string;
+  text: string;
+}
+
 export interface Response {
-  _JOVO_SPEECH_: string;
-  _JOVO_TEXT_: string;
-  _JOVO_SESSION_DATA_: SessionData;
-  _JOVO_AUDIO_?: {};
+  _speech: Dialog;
+  _reprompt: Dialog;
+  _sessionData: SessionData;
+  _audio?: {};
 }
 
 export interface BixbyTestSuite extends TestSuite<BixbyRequestBuilder, BixbyResponseBuilder> {}

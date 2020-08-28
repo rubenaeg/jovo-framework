@@ -1,9 +1,11 @@
-import { Inputs, JovoRequest, SessionData, Input } from 'jovo-core';
 import _get from 'lodash.get';
-import { VivContext, BixbyRequestJSON } from './Interfaces';
+import { Inputs, JovoRequest, Input } from 'jovo-core';
+
+import { BixbyRequestJSON, SessionData, VivContext } from './Interfaces';
 
 export class BixbyRequest implements JovoRequest {
   vivContext?: VivContext;
+  // @ts-ignore
   sessionData: SessionData = {};
   intent: string | undefined;
   directive: string | undefined;
@@ -21,15 +23,11 @@ export class BixbyRequest implements JovoRequest {
         case '$vivContext':
           request.vivContext = val;
           break;
-        case '_JOVO_PREV_RESPONSE_':
-          request.sessionData = _get(bixbyJson, `${key}._JOVO_SESSION_DATA_`, {});
+        case '_jovoContext':
+          request.sessionData = _get(bixbyJson, `_jovoContext._sessionData`, {});
           break;
         default: {
-          const inputKey = '_JOVO_INPUT_';
-          if (key.includes(inputKey)) {
-            const newKey = key.slice(inputKey.length);
-            request.inputs[newKey] = val;
-          }
+          request.inputs[key] = val;
         }
       }
     }
@@ -87,8 +85,8 @@ export class BixbyRequest implements JovoRequest {
     return false;
   }
 
-  getSessionId(): string | undefined {
-    return this.sessionData._JOVO_SESSION_ID_ || this.vivContext!.sessionId;
+  getSessionId(): string {
+    return this.sessionData._id || this.vivContext!.sessionId;
   }
 
   getInputs(): Inputs {
@@ -114,7 +112,7 @@ export class BixbyRequest implements JovoRequest {
 
   getState() {
     const sessionData: SessionData = this.getSessionAttributes();
-    return sessionData._JOVO_STATE_;
+    return sessionData._state;
   }
 
   setSessionData(sessionData: SessionData) {
@@ -174,7 +172,7 @@ export class BixbyRequest implements JovoRequest {
     // TODO reset session id and session data?
     if (isNew) {
       this.sessionData = {
-        _JOVO_SESSION_ID_: this.getSessionId(),
+        _id: this.getSessionId(),
       };
     }
 
@@ -197,7 +195,7 @@ export class BixbyRequest implements JovoRequest {
   }
 
   setState(state: string) {
-    this.sessionData!._JOVO_STATE_ = state;
+    this.sessionData!._state = state;
     return this;
   }
 
